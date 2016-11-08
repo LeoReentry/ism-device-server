@@ -1,4 +1,6 @@
 node_modules/
 data/
 npm-debug.log
+private.key
+public.cert
 .env

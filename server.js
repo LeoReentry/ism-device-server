@@ -9,17 +9,23 @@
 var express = require('express');
 var app = express();
 var port = process.env.PORT || 8080;
+var morgan = require('morgan'); // Logger
 
 // =================================================
 // =================================================
 // CONFIGURATION
 // =================================================
 // =================================================
+
+// -------------------------------------------------
+// General configuration
+// -------------------------------------------------
+app.use(morgan('dev')); 	// Start logger
 // -------------------------------------------------
 // Views
 // -------------------------------------------------
 app.set('view engine', 'pug');
-// app.use('/static', express.static(__dirname + '/public'));
+app.use('/static', express.static(__dirname + '/public'));
 app.set('views', __dirname+'/views');
 require('./app/routes.js')(app);
 

@@ -2,19 +2,25 @@ extends ./layout.pug
 block content
   h1.text-xs-center Configuration
   p.lead Please specify the Device parameters
-  form(method='post',action='/configuration/done')
-    .form-group
-      label(for='urlinput') IoT Portal URL
-      input#urlinput(type='url' name='portalurl' placeholder='Remember to use https' value=portalurl).form-control
+  form(method='post' action='/configuration/done')
+    if urlMessage && urlMessage.length
+      .form-group.has-danger
+        label.form-control-label(for='name') IoT Portal URL
+        input#urlinput(type='url' name='portalurl' placeholder='Remember to use https' value=portalurl).form-control
+        span.form-control-feedback #{urlMessage}
+    else
+      .form-group
+        label(for='urlinput') IoT Portal URL
+        input#urlinput(type='url' name='portalurl' placeholder='Remember to use https' value=portalurl).form-control
     if error && error.length
       .form-group.has-danger
         label.form-control-label(for='name') Name
-        input#name(type='text' name='name' placeholder='Please enter a unique name for the device').form-control
+        input#name(type='text' value=inName name='name' placeholder='Please enter a unique name for the device').form-control
         span.form-control-feedback #{error}
     else
       .form-group
         label(for='name') Name
-        input#name(type='text' name='name' placeholder='Please enter a unique name for the device').form-control
+        input#name(type='text' value=inName name='name' placeholder='Please enter a unique name for the device').form-control
     .form-group
       label(for='location') Location
       select#location.form-control(name='location')

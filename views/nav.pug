@@ -2,7 +2,7 @@ nav.navbar.navbar-dark.bg-inverse
   .container
     a.navbar-brand(href='/') ISM Device
     .nav.navbar-nav
-      each item in ["Home", "Configuration", "About"]
+      each item in ["Home", "Configuration", "About", "Status"]
         if (item == pagetitle)
           a.nav-item.nav-link.active(href='/' + item.toLowerCase()) #{item}
         else

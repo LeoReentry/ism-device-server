@@ -1,0 +1,20 @@
+extends ./layout.pug
+block content
+  if type && type === 'conf'
+    h1.text-xs-center Configuration
+    .alert.alert-success Success! Your device has been registered. Please approve it on the portal page.
+  else
+    h1.text-xs-center Status
+
+  .row
+    .col-sm-4
+      p.lead
+        strong Name
+    .col-sm-8
+      p #{name}
+  .row
+    .col-sm-4
+      p.lead
+        strong Verification code
+    .col-sm-8
+      p #{code}

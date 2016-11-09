@@ -1,10 +1,24 @@
 extends ./layout.pug
 block content
-  h1.text-center Configuration
-  p.lead Please specify your IoT Portal address to start configuration
-  p #{valid}
-  form(method='post')
+  h1.text-xs-center Configuration
+  p.lead Please specify the Device parameters
+  form(method='post',action='/configuration/done')
     .form-group
       label(for='urlinput') IoT Portal URL
       input#urlinput(type='url' name='portalurl' placeholder='Remember to use https' value=portalurl).form-control
+    .form-group
+      label(for='location') Location
+      select#location.form-control
+        each loc in data.Locations
+          option #{loc.Country} - #{loc.City}
+    .form-group
+      label(for='software') Software
+      select#software.form-control
+        each sw in data.Software
+          option Version #{sw.SoftwareVersion}
+    .form-group
+      label(for='hardware') Hardware
+      select#hardware.form-control
+        each hw in data.Hardware
+          option Board: #{hw.Board}, Camera: #{hw.Camera}
     button(type='submit').btn.btn-primary Submit

@@ -32,28 +32,11 @@ module.exports = function(app, validator, xss) {
   // =================================================
   // -------------------------------------------------
   // BASIC config page
-  // Asks for URL of Portal
   // -------------------------------------------------
   app.get('/configuration', function(req, res) {
-    var request = require('request');
-    var url = 'https://ismportal.azurewebsites.net/api/newdevice';
-    request.get({
-        url: url,
-        json: true
-      }, (err, resp, data) => {
-        if (err) {
-          console.log('Error:', err);
-          res.render('err');
-        } else if (res.statusCode !== 200) {
-          console.log('Status:', res.statusCode);
-          res.render('err');
-        } else {
-          // data is already parsed as JSON:
-          res.render('configuration', {
-            pagetitle: 'Configuration',
-            data: data
-          });
-        }
+    res.render('configuration', {
+      pagetitle: 'Configuration',
+      url: 'https://ismportal.azurewebsites.net'
     });
   });
   // POST
@@ -69,11 +52,35 @@ module.exports = function(app, validator, xss) {
         url: url
       });
     }
-    res.render('configuration_complete', {
-      pagetitle: 'Configuration',
-      portalurl: url,
-      valid: validator.isURL(url)
-    })
+
+    // URL is valid
+    var request = require('request');
+    // Add API to URL
+    var apiUrl = url + '/api/newdevice';
+    // Make request to API to get Locations
+    request.get({
+        url: apiUrl,
+        json: true
+      }, (err, resp, data) => {
+        // An error occured
+        if (err) {
+          console.log('Error:', err);
+          res.render('err');
+        // Something bad has happened
+        } else if (res.statusCode !== 200) {
+          console.log('Status:', res.statusCode);
+          res.render('err');
+        // Everything OK
+        } else {
+          console.log(data);
+          // data is already parsed as JSON
+          res.render('configuration_complete', {
+            pagetitle: 'Configuration',
+            portalurl: url,
+            data: data
+          });
+        }
+    });
   })
 
 };

@@ -9,7 +9,7 @@ nav.navbar.navbar-default
       a.navbar-brand(href='/') ISM Device
     .collapse.navbar-collapse#navbar-collapse
       ul.nav.navbar-nav
-        each item in ["Home", "About"]
+        each item in ["Home", "Configuration", "About"]
           if (item == pagetitle)
             li.active
               a(href='/' + item.toLowerCase()) #{item}

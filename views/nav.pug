@@ -1,19 +1,9 @@
-nav.navbar.navbar-inverse
+nav.navbar.navbar-dark.bg-inverse
   .container
-    .navbar-header
-      button(type='button' data-toggle='collapse' data-target='#navbar-collapse' area-expanded='false').navbar-toggle.collapsed
-        span.sr-only Toggle navigation
-        span.icon-bar
-        span.icon-bar
-        span.icon-bar
-      a.navbar-brand(href='/') ISM Device
-    .collapse.navbar-collapse#navbar-collapse
-      ul.nav.navbar-nav
-        each item in ["Home", "Configuration", "About"]
-          if (item == pagetitle)
-            li.active
-              a(href='/' + item.toLowerCase()) #{item}
-                span.sr-only (current)
-          else
-            li
-              a(href='/' + item.toLowerCase()) #{item}
+    a.navbar-brand(href='/') ISM Device
+    .nav.navbar-nav
+      each item in ["Home", "Configuration", "About"]
+        if (item == pagetitle)
+          a.nav-item.nav-link.active(href='/' + item.toLowerCase()) #{item}
+        else
+          a.nav-item.nav-link(href='/' + item.toLowerCase()) #{item}

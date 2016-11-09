@@ -1,8 +1,5 @@
-doctype html
-
-html
-  include ./head.pug
-  include ./nav.pug
-
-  body
-    p #{data.Locations[0].City}
+extends ./layout.pug
+block content
+  h1.text-center Configuration
+  p.lead Please specify your IoT Portal address to start configuration
+  p #{data.Locations[0].City}

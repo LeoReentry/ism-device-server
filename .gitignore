@@ -3,4 +3,5 @@ data/
 npm-debug.log
 private.key
 public.cert
+TODO
 .env

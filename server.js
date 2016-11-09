@@ -6,6 +6,7 @@
 // SETUP
 // =================================================
 // =================================================
+require('dotenv').config();
 var fs = require('fs');
 var https = require('https');
 var express = require('express');
@@ -13,6 +14,8 @@ var app = express();
 var port = process.env.PORT || 443;
 var morgan = require('morgan'); // Logger
 var bodyParser = require('body-parser');
+var session = require('express-session');
+var flash = require('connect-flash');
 var validator = require('validator');
 var xss = require('xss');
 
@@ -36,6 +39,13 @@ server.listen(process.env.HTTPPORT || 80);
 app.use(morgan('dev')); 	// Start logger
 app.use(bodyParser.urlencoded({ extended: true })); // Support URL encoded bodies
 app.use(bodyParser.json({ extended: true })); // Support JSON encoded bodies
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: true }
+}))
+app.use(flash()); // Flash messages
 // HTTPS certificates
 var options = {
    key  : fs.readFileSync(__dirname + '/private.key'),

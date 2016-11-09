@@ -17,7 +17,7 @@ module.exports = function(app, validator, xss) {
   });
   // =================================================
   // =================================================
-  // HOME PAGE
+  // ABOUT PAGE
   // =================================================
   // =================================================
   app.get('/about', function(req, res) {
@@ -27,7 +27,7 @@ module.exports = function(app, validator, xss) {
   });
   // =================================================
   // =================================================
-  // Config PAGE
+  // CONFIG PAGE
   // =================================================
   // =================================================
   // -------------------------------------------------
@@ -72,15 +72,34 @@ module.exports = function(app, validator, xss) {
           res.render('err');
         // Everything OK
         } else {
-          console.log(data);
           // data is already parsed as JSON
           res.render('configuration_complete', {
             pagetitle: 'Configuration',
             portalurl: url,
-            data: data
+            data: data,
+            error: req.flash('nameError')
           });
         }
     });
+  })
+
+  app.post('/configuration/done', function(req, res){
+    // XSS protection
+    var url = xss(req.body.portalurl);
+    var sw = xss(req.body.software);
+    var hw = xss(req.body.hardware);
+    var loc = xss(req.body.location);
+    var nm = xss(req.body.name);
+    
+    // If no name has been specified
+    if (nm.length == 0) {
+      // Make a 307 redirect
+      // That means make same post request again
+      req.flash('nameError', 'Please specify a name. Only alphanumerical characters and underscore allowed.')
+      res.redirect(307, '/configuration');
+    }
+
+
   })
 
 };

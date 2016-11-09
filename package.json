@@ -9,11 +9,14 @@
   "author": "SWT",
   "license": "UNLICENSED",
   "dependencies": {
+    "body-parser": "^1.15.2",
     "bootstrap": "^3.3.7",
     "express": "^4.14.0",
     "jquery": "^3.1.1",
     "morgan": "^1.7.0",
     "pug": "^2.0.0-beta6",
-    "request": "^2.78.0"
+    "request": "^2.78.0",
+    "validator": "^6.1.0",
+    "xss": "^0.2.17"
   }
 }

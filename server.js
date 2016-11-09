@@ -12,6 +12,9 @@ var express = require('express');
 var app = express();
 var port = process.env.PORT || 443;
 var morgan = require('morgan'); // Logger
+var bodyParser = require('body-parser');
+var validator = require('validator');
+var xss = require('xss');
 
 // =================================================
 // =================================================
@@ -31,6 +34,8 @@ server.listen(process.env.HTTPPORT || 80);
 // General configuration
 // -------------------------------------------------
 app.use(morgan('dev')); 	// Start logger
+app.use(bodyParser.urlencoded({ extended: true })); // Support URL encoded bodies
+app.use(bodyParser.json({ extended: true })); // Support JSON encoded bodies
 // HTTPS certificates
 var options = {
    key  : fs.readFileSync(__dirname + '/private.key'),
@@ -44,7 +49,7 @@ app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); /
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
 app.set('views', __dirname+'/views');
-require('./app/routes.js')(app);
+require('./app/routes.js')(app, validator, xss);
 
 // =================================================
 // =================================================

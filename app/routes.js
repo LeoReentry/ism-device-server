@@ -1,7 +1,7 @@
 'use strict';
 // app/routes.js
 
-module.exports = function(app) {
+module.exports = function(app, validator, xss) {
   // =================================================
   // =================================================
   // HOME PAGE
@@ -30,7 +30,12 @@ module.exports = function(app) {
   // Config PAGE
   // =================================================
   // =================================================
-  app.get('/configuration', function(req, res) {var request = require('request');
+  // -------------------------------------------------
+  // BASIC config page
+  // Asks for URL of Portal
+  // -------------------------------------------------
+  app.get('/configuration', function(req, res) {
+    var request = require('request');
     var url = 'https://ismportal.azurewebsites.net/api/newdevice';
     request.get({
         url: url,
@@ -51,5 +56,24 @@ module.exports = function(app) {
         }
     });
   });
+  // POST
+  // URL is defined
+  app.post('/configuration', function(req, res) {
+    // XSS protection
+    var url = xss(req.body.portalurl);
+    // If URL isn't valid, ask user to use correct URL
+    if (!validator.isURL(url)) {
+      res.render('configuration', {
+        pagetitle: 'Configuration',
+        error: 'Please specify a correct URL',
+        url: url
+      });
+    }
+    res.render('configuration_complete', {
+      pagetitle: 'Configuration',
+      portalurl: url,
+      valid: validator.isURL(url)
+    })
+  })
 
 };

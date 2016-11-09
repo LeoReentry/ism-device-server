@@ -2,4 +2,12 @@ extends ./layout.pug
 block content
   h1.text-center Configuration
   p.lead Please specify your IoT Portal address to start configuration
-  p #{data.Locations[0].City}
+  form(method='post')
+    .form-group
+      label(for='urlinput') IoT Portal URL
+      if (error)
+        input#urlinput(type='text' name='portalurl' placeholder='Remember to use https' value=url).form-control.error
+        span.help-block.error Please specify a correct url
+      else
+        input#urlinput(type='text' name='portalurl' placeholder='Remember to use https' value='https://ismportal.azurewebsites.net').form-control
+    button(type='submit').btn.btn-primary Submit

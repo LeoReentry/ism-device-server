@@ -1,14 +1,11 @@
 doctype html
 
 html
-  head
-    title ISM Device Web Interface
-    link(rel='stylesheet', href='/css/bootstrap.min.css')
-    script(src='/js/jquery.min.js')
-    script(src='/js/bootstrap.min.js')
+  include ./head.pug
+  include ./nav.pug
 
   body
-    .container.text-center
+    .container-fluid.text-center
       h1 Please configure this device
       p Temp
       //- form#locform(action="/", method="post")

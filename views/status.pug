@@ -36,4 +36,7 @@ block content
 
   .text-xs-center
     form(action='/status',method='post')
-      button.btn.btn-primary(type='submit') Check approval status
+      if (status == 'Approved')
+        button.btn.btn-primary(type='submit').disabled Check approval status
+      else
+        button.btn.btn-primary(type='submit') Check approval status

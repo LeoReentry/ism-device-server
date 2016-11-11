@@ -158,26 +158,21 @@ module.exports = function(app, validator, xss, fs) {
           }
 
           // data is already parsed as JSON
-          var status = {
-            name: data.Id,
-            code: data.Code,
-            status: "Approval pending"
-          }
           var config = {
             name: nm,
             url: url,
             sw: sw,
             hw: hw,
             loc: loc,
-            code: data.Code
+            code: data.Code,
+            status: "Approval pending"
           }
-          fs.writeFile("status.json", JSON.stringify( status ), "utf8" );
           fs.writeFile("config.json", JSON.stringify( config ), "utf8" );
           res.render('status', {
             pagetitle: 'Configuration',
             code: data.Code,
             name: data.Id,
-            status: status.status,
+            status: config.status,
             type: 'conf'
           });
         }
@@ -190,7 +185,7 @@ module.exports = function(app, validator, xss, fs) {
   // =================================================
   // =================================================
   app.get('/status', function(req, res) {
-    fs.readFile('status.json', (err, data) => {
+    fs.readFile('config.json', (err, data) => {
       if (err) {
         return res.render('err', {
           message: 'Please configure the device.',
@@ -232,6 +227,9 @@ module.exports = function(app, validator, xss, fs) {
         });
       } // if (err)
       var configData = JSON.parse(config);
+      if (configData.status === 'Approved') {
+        return res.redirect('/status');
+      }
       var apiUrl = configData.url + '/api/newdevice/' + configData.name + '?code=' + configData.code;
       var request = require('request');
       request.get({
@@ -259,7 +257,7 @@ module.exports = function(app, validator, xss, fs) {
               console.log(data.Error);
               if (data.Error === "Device does not exist.") {
                 configData.status = "Denied";
-                fs.writeFile('status.json', JSON.stringify(configData), 'utf8');
+                fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
                 req.flash("statuserror", "Device was rejected from portal.")
                 return res.redirect('/status');
               }
@@ -270,7 +268,7 @@ module.exports = function(app, validator, xss, fs) {
             // data is already parsed as JSON
             fs.writeFile("key.json", JSON.stringify( data ), "utf8" );
             configData.status = "Approved";
-            fs.writeFile('status.json', JSON.stringify(configData), 'utf8');
+            fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
             req.flash('statussuccess', 'Device has been approved.')
             res.redirect('/status');
           }

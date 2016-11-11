@@ -1,7 +1,7 @@
 'use strict';
 // app/routes.js
 
-module.exports = function(app, validator, xss) {
+module.exports = function(app, validator, xss, fs) {
   // =================================================
   // =================================================
   // HOME PAGE
@@ -65,15 +65,21 @@ module.exports = function(app, validator, xss) {
         // An error occured
         if (err) {
           console.log('Error:', err);
-          res.render('err');
+          return res.render('err', {
+            message: 'An error occured trying to contact the server.',
+            pagetitle: 'Configuration'
+          });
         // Something bad has happened
         } else if (res.statusCode !== 200) {
           console.log('Status:', res.statusCode);
-          res.render('err');
+          return res.render('err', {
+            message: "Error. The server API doesn't work as expected",
+            pagetitle: 'Configuration'
+          });
         // Everything OK
         } else {
           // data is already parsed as JSON
-          res.render('configuration_complete', {
+          return res.render('configuration_complete', {
             pagetitle: 'Configuration',
             portalurl: url,
             data: data,
@@ -127,11 +133,17 @@ module.exports = function(app, validator, xss) {
         // An error occured
         if (err) {
           console.log('Error:', err);
-          res.render('err');
+          return res.render('err', {
+            message: 'An error occured trying to contact the server.',
+            pagetitle: 'Configuration'
+          });
         // Something bad has happened
         } else if (res.statusCode !== 200) {
           console.log('Status:', res.statusCode);
-          res.render('err');
+          return res.render('err', {
+            message: "Error. The server API doesn't work as expected",
+            pagetitle: 'Configuration'
+          });
         // Everything OK
         } else {
           // Oh no, an error in the request
@@ -146,25 +158,124 @@ module.exports = function(app, validator, xss) {
           }
 
           // data is already parsed as JSON
+          var status = {
+            name: data.Id,
+            code: data.Code,
+            status: "Approval pending"
+          }
+          var config = {
+            name: nm,
+            url: url,
+            sw: sw,
+            hw: hw,
+            loc: loc,
+            code: data.Code
+          }
+          fs.writeFile("status.json", JSON.stringify( status ), "utf8" );
+          fs.writeFile("config.json", JSON.stringify( config ), "utf8" );
           res.render('status', {
             pagetitle: 'Configuration',
             code: data.Code,
             name: data.Id,
+            status: status.status,
             type: 'conf'
           });
         }
     });
-
-
   });
 
+  // =================================================
+  // =================================================
+  // STATUS PAGE
+  // =================================================
+  // =================================================
   app.get('/status', function(req, res) {
-    res.render('status',{
-      type: 'status',
-      code: '123456',
-      name: 'name',
-      pagetitle: 'Status'
+    fs.readFile('status.json', (err, data) => {
+      if (err) {
+        return res.render('err', {
+          message: 'Please configure the device.',
+          pagetitle: "Status"
+        });
+      }
+      var status = JSON.parse(data);
+      if (status.code === undefined || status.name === undefined) {
+        return res.render('err', {
+          message: 'Please configure the device.',
+          pagetitle: "Status"
+        });
+      }
+      res.render('status',{
+        type: 'status',
+        code: status.code,
+        name: status.name,
+        status: status.status,
+        pagetitle: 'Status',
+        message: req.flash('statusmessage'),
+        error: req.flash('statuserror'),
+        success: req.flash('statussuccess'),
+      });
     });
   });
+
+
+  // =================================================
+  // =================================================
+  // CHECK APPROVAL PAGE
+  // =================================================
+  // =================================================
+  app.post('/status', (req, res) => {
+    fs.readFile('config.json', (err, config) => {
+      if (err) {
+        return res.render('err', {
+          message: 'Device not configured.',
+          pagetitle: 'Error'
+        });
+      } // if (err)
+      var configData = JSON.parse(config);
+      var apiUrl = configData.url + '/api/newdevice/' + configData.name + '?code=' + configData.code;
+      var request = require('request');
+      request.get({
+          url: apiUrl,
+          json: true
+        }, (err, resp, data) => {
+          // An error occured
+          if (err) {
+            console.log('Error:', err);
+            return res.render('err', {
+              message: 'An error occured trying to contact the server.',
+              pagetitle: 'Configuration'
+            });
+          // Something bad has happened
+          } else if (res.statusCode !== 200) {
+            console.log('Status:', res.statusCode);
+            return res.render('err', {
+              message: "Error. The server API doesn't work as expected",
+              pagetitle: 'Configuration'
+            });
+          // Everything OK
+          } else {
+            // Oh no, an error in the request
+            if (data.Error) {
+              console.log(data.Error);
+              if (data.Error === "Device does not exist.") {
+                configData.status = "Denied";
+                fs.writeFile('status.json', JSON.stringify(configData), 'utf8');
+                req.flash("statuserror", "Device was rejected from portal.")
+                return res.redirect('/status');
+              }
+              req.flash("statusmessage", "Device is not approved yet. Please approve the device and double-check the verification code.")
+              return res.redirect('/status');
+            }
+
+            // data is already parsed as JSON
+            fs.writeFile("key.json", JSON.stringify( data ), "utf8" );
+            configData.status = "Approved";
+            fs.writeFile('status.json', JSON.stringify(configData), 'utf8');
+            req.flash('statussuccess', 'Device has been approved.')
+            res.redirect('/status');
+          }
+      }); // request.get
+    }); // fs.readFile
+  }); // app.get
 
 };

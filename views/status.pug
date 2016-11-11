@@ -1,10 +1,14 @@
 extends ./layout.pug
 block content
+  h1.text-xs-center #{pagetitle}
   if type && type === 'conf'
-    h1.text-xs-center Configuration
     .alert.alert-success Success! Your device has been registered. Please approve it on the portal page.
-  else
-    h1.text-xs-center Status
+  if message && message.length
+    .alert.alert-warning #{message}
+  if error && error.length
+    .alert.alert-danger #{error}
+  if success && success.length
+    .alert.alert-success #{success}
 
   .row
     .col-sm-4
@@ -18,3 +22,18 @@ block content
         strong Verification code
     .col-sm-8
       p #{code}
+  .row
+    .col-sm-4
+      p.lead
+        strong Current status
+    .col-sm-8
+      if (status === "Approved")
+        p.text-success #{status}
+      else if (status === "Denied")
+        p.text-danger #{status}
+      else
+        p.text-warning #{status}
+
+  .text-xs-center
+    form(action='/status',method='post')
+      button.btn.btn-primary(type='submit') Check approval status

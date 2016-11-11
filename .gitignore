@@ -5,3 +5,6 @@ private.key
 public.cert
 TODO
 .env
+config.json
+key.json
+status.json

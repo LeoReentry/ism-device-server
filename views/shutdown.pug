@@ -1,0 +1,6 @@
+extends ./layout.pug
+block content
+  h1.text-xs-center #{pagetitle}
+  .alert.alert-danger.text-xs-center
+    p Are you sure you want to shutdown the server?
+    button.btn.btn-danger.text-xs-center#shutdown Shutdown

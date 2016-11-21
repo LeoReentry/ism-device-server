@@ -2,6 +2,13 @@
 // app/routes.js
 
 module.exports = function(app, validator, xss, fs) {
+  app.get('/shutdown', (req, res) => {
+    res.render('shutdown', {
+      pagetitle: "Shutdown",
+      message: "Server is shut down."
+    });
+    // process.exit();
+  });
   // =================================================
   // =================================================
   // HOME PAGE

@@ -57,6 +57,7 @@ var options = {
 app.set('view engine', 'pug');
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); // redirect bootstrap JS
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
+app.use('/js', express.static(__dirname + '/public')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
 app.set('views', __dirname+'/views');
 require('./app/routes.js')(app, validator, xss, fs);

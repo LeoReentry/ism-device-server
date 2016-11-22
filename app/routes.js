@@ -9,6 +9,9 @@ module.exports = function(app, validator, xss, fs) {
     });
     // process.exit();
   });
+  app.get('/shutdown/yes', (req, res) => {
+    process.exit();
+  });
   // =================================================
   // =================================================
   // HOME PAGE

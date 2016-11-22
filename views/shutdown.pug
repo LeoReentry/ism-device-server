@@ -1,6 +1,8 @@
 extends ./layout.pug
+block scripts
+  script(src='/js/shutdown.js')
 block content
   h1.text-xs-center #{pagetitle}
   .alert.alert-danger.text-xs-center
-    p Are you sure you want to shutdown the server?
+    p#question Are you sure you want to shutdown the server?
     button.btn.btn-danger.text-xs-center#shutdown Shutdown

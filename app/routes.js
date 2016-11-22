@@ -274,9 +274,12 @@ module.exports = function(app, validator, xss, fs) {
               req.flash("statusmessage", "Device is not approved yet. Please approve the device and double-check the verification code.")
               return res.redirect('/status');
             }
-
-            // data is already parsed as JSON
-            fs.writeFile("key.json", JSON.stringify( data ), "utf8" );
+            // Encrypt secret
+            var exec = require('child_process').exec;
+            var cmd = process.env.ENCPATH + 'encrypt_data "'+data.Key+'"';
+            exec(cmd, function(error, stdout, stderr) {
+              // command output is in stdout
+            });
             configData.status = "Approved";
             fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
             req.flash('statussuccess', 'Device has been approved.')

@@ -276,7 +276,7 @@ module.exports = function(app, validator, xss, fs) {
             }
             // Encrypt secret
             var exec = require('child_process').exec;
-            var cmd = '/home/debian/ism-device-crypto/deh -e -n connectionstring ' + data.Key; //process.env.ENCPATH + 'encrypt_data "'+data.Key+'"';
+            var cmd = 'deh -e -n connectionstring ' + data.Key;
             exec(cmd, function(error, stdout, stderr) {
               // command output is in stdout
             });

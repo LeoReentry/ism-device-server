@@ -18,6 +18,7 @@ var session = require('express-session');
 var flash = require('connect-flash');
 var validator = require('validator');
 var xss = require('xss');
+var helmet = require('helmet');
 
 // =================================================
 // =================================================
@@ -36,10 +37,12 @@ server.listen(process.env.HTTPPORT || 80);
 // -------------------------------------------------
 // General configuration
 // -------------------------------------------------
+app.use(helmet());
 app.use(morgan('dev')); 	// Start logger
 app.use(bodyParser.urlencoded({ extended: true })); // Support URL encoded bodies
 app.use(bodyParser.json({ extended: true })); // Support JSON encoded bodies
 app.use(session({
+  name: 'ThisIsACookie',
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,

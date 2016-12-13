@@ -260,65 +260,85 @@ module.exports = function(app, validator, xss, fs) {
 
       // Decrypt password
       var exec = require('child_process').exec;
-      var cmd = 'deh -dn password';
-      exec(cmd, function(error, stdout, stderr) {
-        if (error) {
-          cmd = 'tpm_resetdalock -z';
-          exec(cmd, function(error, stdout, stderr) {
-            res.render('err', {
-              message: "Error. The device encryption module is in lockdown mode because it is protecting itself against dictionary attacks. We will reset it. Please restart configuration. If this error persists, you might be under attack.",
-              pagetitle: 'Configuration'
-            });
-          });
-        } else {
-          // Ok, everything is good. Now, let's make the request.
-          var apiUrl = configData.url + '/api/newdevice/' + configData.name + '?code=' + configData.code + '&password=' + encodeURIComponent(stdout.replace(/[\n\t\r]/g,""));
-          var request = require('request');
-          request.get({
-              url: apiUrl,
-              json: true
-            }, (err, resp, data) => {
-              // An error occured
-              if (err) {
-                console.log('Error:', err);
-                return res.render('err', {
-                  message: 'An error occured trying to contact the server.',
-                  pagetitle: 'Configuration'
-                });
-              // Something bad has happened
-              } else if (res.statusCode !== 200) {
-                console.log('Status:', res.statusCode);
-                return res.render('err', {
-                  message: "Error. The server API doesn't work as expected",
-                  pagetitle: 'Configuration'
-                });
-              // Everything OK
-              } else {
-                // Oh no, an error in the request
-                if (data.Error) {
-                  console.log(data.Error);
-                  if (data.Error === "Device does not exist.") {
-                    configData.status = "Denied";
-                    fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
-                    req.flash("statuserror", "Device was rejected from portal.")
-                    return res.redirect('/status');
-                  }
-                  req.flash("statusmessage", "Device is not approved yet. Please approve the device and double-check the verification code.")
+
+      // var decryptPassword = new Promise(function(resolve, reject) {
+      //   exec('deh -dn password', function(error, stdout, stderr) {
+      //     if (error) {
+      //       reject(error, stdout);
+      //     }
+      //     else {
+      //       resolve(stdout);
+      //     }
+      //   });
+      // });
+
+      Promise.resolve('deh -dn password')
+      .then(function(cmd) {
+        exec(cmd, function(error, stdout, stderr) {
+          if (error) {
+            reject(error, stdout);
+          }
+          else {
+            resolve(stdout);
+          }
+        });
+      }).then(function(stdout) {
+        // Ok, everything is good. Now, let's make the request
+        var apiUrl = configData.url + '/api/newdevice/' + configData.name + '?code=' + configData.code + '&password=' + encodeURIComponent(stdout.replace(/[\n\t\r]/g,""));
+        console.log(apiUrl);
+        var request = require('request');
+        request.get({
+            url: apiUrl,
+            json: true
+          }, (err, resp, data) => {
+            // An error occured
+            if (err) {
+              console.log('Error:', err);
+              return res.render('err', {
+                message: 'An error occured trying to contact the server.',
+                pagetitle: 'Configuration'
+              });
+            // Something bad has happened
+            } else if (res.statusCode !== 200) {
+              console.log('Status:', res.statusCode);
+              return res.render('err', {
+                message: "Error. The server API doesn't work as expected",
+                pagetitle: 'Configuration'
+              });
+            // Everything OK
+            } else {
+              // Oh no, an error in the request
+              if (data.Error) {
+                console.log(data.Error);
+                if (data.Error === "Device does not exist.") {
+                  configData.status = "Denied";
+                  fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
+                  req.flash("statuserror", "Device was rejected from portal.")
                   return res.redirect('/status');
                 }
-                // Encrypt secret
-                var exec = require('child_process').exec;
-                var cmd = 'deh -e -n connectionstring ' + data.Key;
-                exec(cmd, function(error, stdout, stderr) {
-                  // command output is in stdout
-                });
-                configData.status = "Approved";
-                fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
-                req.flash('statussuccess', 'Device has been approved.')
-                res.redirect('/status');
-              } // else (everything ok)
-          }); // request.get
-        } // if(error), else
+                req.flash("statusmessage", "Device is not approved yet. Please approve the device and double-check the verification code.")
+                return res.redirect('/status');
+              }
+              // Encrypt secret
+              var exec = require('child_process').exec;
+              var cmd = 'deh -e -n connectionstring ' + data.Key;
+              exec(cmd, function(error, stdout, stderr) {
+                // command output is in stdout
+              });
+              configData.status = "Approved";
+              fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
+              req.flash('statussuccess', 'Device has been approved.')
+              res.redirect('/status');
+            } // else (everything ok)
+        }); // request.get
+      }, function(error, stdout){
+        cmd = 'tpm_resetdalock -z';
+        exec(cmd, function(error, stdout, stderr) {
+          return res.render('err', {
+            message: "Error. The device encryption module is in lockdown mode because it is protecting itself against dictionary attacks. We will reset it. Please restart configuration. If this error persists, you might be under attack.",
+            pagetitle: 'Configuration'
+          });
+        });
       }); // exec()
     }); // fs.readFile
   }); // app.get

@@ -163,28 +163,44 @@ module.exports = function(app, validator, xss, fs) {
               return res.redirect(307, '/configuration');
             }
             return res.render("err", {
-              message: "An unexpected error has occured."
+              message: "An unexpected error has occured.",
+              pagetitle: 'Configuration'
             });
           }
 
-          // data is already parsed as JSON
-          var config = {
-            name: nm,
-            url: url,
-            sw: sw,
-            hw: hw,
-            loc: loc,
-            code: data.Code,
-            status: "Approval pending"
-          }
-          fs.writeFile("config.json", JSON.stringify( config ), "utf8" );
-          res.render('status', {
-            pagetitle: 'Configuration',
-            code: data.Code,
-            name: data.Id,
-            status: config.status,
-            type: 'conf'
-          });
+          // Encrypt password
+          var exec = require('child_process').exec;
+          var cmd = 'deh -en password "' + data.Password + '"';
+          exec(cmd, function(error, stdout, stderr) {
+            if (/Tpm is defending against dictionary attacks/.test(stdout)) {
+              cmd = 'tpm_resetdalock -z';
+              exec(cmd, function(error, stdout, stderr) {
+                res.render('err', {
+                  message: "Error. The device encryption module is in lockdown mode because it is protecting itself against dictionary attacks. We will reset it. Please restart configuration. If this error persists, you might be under attack.",
+                  pagetitle: 'Configuration'
+                });
+              });
+            } else {
+              // data is already parsed as JSON
+              var config = {
+                name: nm,
+                url: url,
+                sw: sw,
+                hw: hw,
+                loc: loc,
+                code: data.Code,
+                status: "Approval pending"
+              }
+              fs.writeFile("config.json", JSON.stringify( config ), "utf8" );
+              res.render('status', {
+                pagetitle: 'Configuration',
+                code: data.Code,
+                name: data.Id,
+                status: config.status,
+                type: 'conf'
+              });
+            }
+          }); // Exec deh
         }
     });
   });
@@ -240,52 +256,70 @@ module.exports = function(app, validator, xss, fs) {
       if (configData.status === 'Approved') {
         return res.redirect('/status');
       }
-      var apiUrl = configData.url + '/api/newdevice/' + configData.name + '?code=' + configData.code;
-      var request = require('request');
-      request.get({
-          url: apiUrl,
-          json: true
-        }, (err, resp, data) => {
-          // An error occured
-          if (err) {
-            console.log('Error:', err);
-            return res.render('err', {
-              message: 'An error occured trying to contact the server.',
+
+
+      // Decrypt password
+      var exec = require('child_process').exec;
+      var cmd = 'deh -dn password';
+      exec(cmd, function(error, stdout, stderr) {
+        if (error) {
+          cmd = 'tpm_resetdalock -z';
+          exec(cmd, function(error, stdout, stderr) {
+            res.render('err', {
+              message: "Error. The device encryption module is in lockdown mode because it is protecting itself against dictionary attacks. We will reset it. Please restart configuration. If this error persists, you might be under attack.",
               pagetitle: 'Configuration'
             });
-          // Something bad has happened
-          } else if (res.statusCode !== 200) {
-            console.log('Status:', res.statusCode);
-            return res.render('err', {
-              message: "Error. The server API doesn't work as expected",
-              pagetitle: 'Configuration'
-            });
-          // Everything OK
-          } else {
-            // Oh no, an error in the request
-            if (data.Error) {
-              console.log(data.Error);
-              if (data.Error === "Device does not exist.") {
-                configData.status = "Denied";
+          });
+        } else {
+          // Ok, everything is good. Now, let's make the request.
+          var apiUrl = configData.url + '/api/newdevice/' + configData.name + '?code=' + configData.code + '&password=' + encodeURIComponent(stdout.replace(/[\n\t\r]/g,""));
+          var request = require('request');
+          request.get({
+              url: apiUrl,
+              json: true
+            }, (err, resp, data) => {
+              // An error occured
+              if (err) {
+                console.log('Error:', err);
+                return res.render('err', {
+                  message: 'An error occured trying to contact the server.',
+                  pagetitle: 'Configuration'
+                });
+              // Something bad has happened
+              } else if (res.statusCode !== 200) {
+                console.log('Status:', res.statusCode);
+                return res.render('err', {
+                  message: "Error. The server API doesn't work as expected",
+                  pagetitle: 'Configuration'
+                });
+              // Everything OK
+              } else {
+                // Oh no, an error in the request
+                if (data.Error) {
+                  console.log(data.Error);
+                  if (data.Error === "Device does not exist.") {
+                    configData.status = "Denied";
+                    fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
+                    req.flash("statuserror", "Device was rejected from portal.")
+                    return res.redirect('/status');
+                  }
+                  req.flash("statusmessage", "Device is not approved yet. Please approve the device and double-check the verification code.")
+                  return res.redirect('/status');
+                }
+                // Encrypt secret
+                var exec = require('child_process').exec;
+                var cmd = 'deh -e -n connectionstring ' + data.Key;
+                exec(cmd, function(error, stdout, stderr) {
+                  // command output is in stdout
+                });
+                configData.status = "Approved";
                 fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
-                req.flash("statuserror", "Device was rejected from portal.")
-                return res.redirect('/status');
-              }
-              req.flash("statusmessage", "Device is not approved yet. Please approve the device and double-check the verification code.")
-              return res.redirect('/status');
-            }
-            // Encrypt secret
-            var exec = require('child_process').exec;
-            var cmd = 'deh -e -n connectionstring ' + data.Key;
-            exec(cmd, function(error, stdout, stderr) {
-              // command output is in stdout
-            });
-            configData.status = "Approved";
-            fs.writeFile('config.json', JSON.stringify(configData), 'utf8');
-            req.flash('statussuccess', 'Device has been approved.')
-            res.redirect('/status');
-          }
-      }); // request.get
+                req.flash('statussuccess', 'Device has been approved.')
+                res.redirect('/status');
+              } // else (everything ok)
+          }); // request.get
+        } // if(error), else
+      }); // exec()
     }); // fs.readFile
   }); // app.get
 

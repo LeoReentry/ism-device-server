@@ -309,12 +309,14 @@ module.exports = function(app, validator, xss, fs) {
       if (values.err) {
         console.error(values.err);
         req.flash('errormessage', 'An error occured trying to contact the server.');
+        // Abort promise chain
         throw new Error('Error');
       }
       // Something bad has happened in the request
       if (values.resp.statusCode !== 200) {
         console.log('Status: ' + values.resp.statusCode);
         req.flash('errormessage', "Error. The server API doesn't work as expected");
+        // Abort promise chain
         throw new Error('Error');
       }
       // Device has been removed or denied
@@ -335,16 +337,26 @@ module.exports = function(app, validator, xss, fs) {
       // Write configuration back to device
       values.configData.status = "Approved";
       fs.writeFile('config.json', JSON.stringify(values.configData), 'utf8');
-      // Encrypt the data
-      return values.data
+
+      // Encrypt data
+      // Execute child processes
+      var exec = require('child_process').exec;
+      return new Promise((resolve, reject) => {
+        // Reset TPM DA lock and encrypt the settings
+        exec('tpm_resetdalock -z', exec('deh -en settings ' + JSON.stringify(values.data), (error, stdout, stderr) => {
+          if(error) {
+            console.error(error);
+            req.flash('errormessage', 'An error happened during the encryption of the data. Please reconfigure the device.');
+            return reject('Error');
+          }
+          resolve()
+        }));
+      });
     })
     // Process the received data
-    .then((data) => {
-      console.log(data);
-      req.flash('statusmessage', JSON.stringify(data));
-      // Abort promise chain
-      throw new Error('Status');
-
+    .then(() => {
+      req.flash('statussuccess', 'Device has been approved.')
+      return res.redirect('/status');
     })
     .catch((error) => {
       if (error == 'Error') {

@@ -244,22 +244,103 @@ module.exports = function(app, validator, xss, fs) {
   // CHECK APPROVAL PAGE
   // =================================================
   // =================================================
+  var nop = function(){};
+
   app.post('/status', (req, res) => {
+    var exec = require('child_process').exec;
+    // Promise for reading configuration file
     var fileRead = new Promise((resolve, reject) => {
+      // Read file
       fs.readFile('config.json', (err, config) => {
+        // Handle error
         if (err) {
           req.flash('errormessage', 'Device not configured.')
           return reject('Error');
         }
+        // Parse the configuration data
         var configData = JSON.parse(config);
+        // If the device is already approved, we don't need to to anything. Redirect.
         if (configData.status === 'Approved')
           return reject('Status');
+        // Ok, everything's fine
         resolve(configData);
       }); // fs.readFile
-    }); // Promise
+    }); // Promise fileRead
+    // Promise that we'll decrypt the password
+    var passwordRead = new Promise((resolve, reject) => {
+      exec('deh -dn password', (error, stdout, stderr) => {
+        if (error) {
+          exec('tpm_resetdalock -z', nop);
+          console.error(error);
+          req.flash('errormessage', 'The device encryption module is defending against dictionary attacks. Please try again. If this error persists, you might be victim of an attack.');
+          reject('Error');
+        }
+        else {
+          // Everything is ok
+          resolve(stdout);
+        }
+      }); // Exec command
+    }); // Promise passwordRead
 
-    
-    fileRead.then((configData) => {
+
+    // Execute reading config data and password
+    Promise.all([fileRead, passwordRead])
+    // Make API request to see if we have been approved
+    .then((values) => {
+      // Get variables
+      var configData = values[0];
+      var password = values[1];
+      // Build API request URL
+      var apiUrl = configData.url + '/api/newdevice/' + configData.name + '?code=' + configData.code + '&password=' + encodeURIComponent(password.replace(/[\n\t\r]/g,""));
+      // Make the request
+      var request = require('request');
+      return new Promise((resolve, reject) => {
+        request.get({ url: apiUrl, json: true }, (err, resp, data) => {
+          resolve( {err: err, resp: resp, data:data, configData: configData} );
+        });
+      });
+    })
+    // Process the API response
+    .then((values) => {
+      // Request finished
+      // An error occured
+      if (values.err) {
+        console.error(values.err);
+        req.flash('errormessage', 'An error occured trying to contact the server.');
+        throw new Error('Error');
+      }
+      // Something bad has happened in the request
+      if (values.resp.statusCode !== 200) {
+        console.log('Status: ' + values.resp.statusCode);
+        req.flash('errormessage', "Error. The server API doesn't work as expected");
+        throw new Error('Error');
+      }
+      // Device has been removed or denied
+      if (values.data.Error && values.data.Error == "Device does not exist.") {
+        values.configData.status = "Denied";
+        fs.writeFile('config.json', JSON.stringify(values.configData), 'utf8');
+        req.flash('statuserror', "Device was rejected from portal.");
+        // Abort promise chain
+        throw new Error('Status');
+      }
+      // Device is not approved yet
+      if (values.data.Error) {
+        req.flash('statusmessage', "Device is not approved yet. Please approve the device and double-check the verification code.");
+        // Abort promise chain
+        throw new Error('Status');
+      }
+      // Everything's good.
+      // Write configuration back to device
+      values.configData.status = "Approved";
+      fs.writeFile('config.json', JSON.stringify(values.configData), 'utf8');
+      // Encrypt the data
+      return values.data
+    })
+    .then((data) => {
+      console.log(data);
+      req.flash('statusmessage', JSON.stringify(data));
+      // Abort promise chain
+      throw new Error('Status');
 
     })
     .catch((error) => {
@@ -268,10 +349,18 @@ module.exports = function(app, validator, xss, fs) {
           pagetitle: 'Status',
           message: req.flash('errormessage')
         });
-      } else if (error == 'Status') {
+      }
+      else if (error == 'Error: Status') {
         return res.redirect('/status');
       }
-    });
+      else {
+        console.error(error);
+        res.render('err', {
+          pagetitle: 'Error',
+          message: error
+        });
+      }
+    }); // catch
   }); // app.get
 
 };

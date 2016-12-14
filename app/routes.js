@@ -247,7 +247,6 @@ module.exports = function(app, validator, xss, fs) {
   var nop = function(){};
 
   app.post('/status', (req, res) => {
-    var exec = require('child_process').exec;
     // Promise for reading configuration file
     var fileRead = new Promise((resolve, reject) => {
       // Read file
@@ -268,18 +267,21 @@ module.exports = function(app, validator, xss, fs) {
     }); // Promise fileRead
     // Promise that we'll decrypt the password
     var passwordRead = new Promise((resolve, reject) => {
-      exec('deh -dn password', (error, stdout, stderr) => {
+      // Execute child processes
+      var exec = require('child_process').exec;
+      // A for child processes
+      function callback(error, stdout, stderr) {
+        // Some error
         if (error) {
-          exec('tpm_resetdalock -z', nop);
           console.error(error);
-          req.flash('errormessage', 'The device encryption module is defending against dictionary attacks. Please try again. If this error persists, you might be victim of an attack.');
-          reject('Error');
+          req.flash('errormessage', 'An error happened during the decryption of the password.');
+          return reject('Error');
         }
-        else {
-          // Everything is ok
-          resolve(stdout);
-        }
-      }); // Exec command
+        // Everything is ok
+        resolve(stdout);
+      }
+      // First reset the DA lock (just in case), then decrypt the password
+      exec('tpm_resetdalock -z', exec('deh -dn password', callback) );
     }); // Promise passwordRead
 
 
@@ -336,6 +338,7 @@ module.exports = function(app, validator, xss, fs) {
       // Encrypt the data
       return values.data
     })
+    // Process the received data
     .then((data) => {
       console.log(data);
       req.flash('statusmessage', JSON.stringify(data));
@@ -350,7 +353,7 @@ module.exports = function(app, validator, xss, fs) {
           message: req.flash('errormessage')
         });
       }
-      else if (error == 'Error: Status') {
+      else if (error == 'Error: Status' || error == 'Status') {
         return res.redirect('/status');
       }
       else {

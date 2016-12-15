@@ -342,8 +342,10 @@ module.exports = function(app, validator, xss, fs) {
       // Execute child processes
       var exec = require('child_process').exec;
       return new Promise((resolve, reject) => {
+        // Properly escape double quotes in JSON string by using single quotes in bash
+        var cmd = "deh -en settings '" + JSON.stringify(values.data) + "'";
         // Reset TPM DA lock and encrypt the settings
-        exec('tpm_resetdalock -z', exec('deh -en settings ' + JSON.stringify(values.data), (error, stdout, stderr) => {
+        exec('tpm_resetdalock -z', exec(cmd, (error, stdout, stderr) => {
           if(error) {
             console.error(error);
             req.flash('errormessage', 'An error happened during the encryption of the data. Please reconfigure the device.');

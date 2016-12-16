@@ -171,14 +171,11 @@ module.exports = function(app, validator, xss, fs) {
           // Encrypt password
           var exec = require('child_process').exec;
           var cmd = "deh -en password '" + data.Password + "'";
-          exec(cmd, function(error, stdout, stderr) {
-            if (/Tpm is defending against dictionary attacks/.test(stdout)) {
-              cmd = 'tpm_resetdalock -z';
-              exec(cmd, function(error, stdout, stderr) {
-                res.render('err', {
-                  message: "Error. The device encryption module is in lockdown mode because it is protecting itself against dictionary attacks. We will reset it. Please restart configuration. If this error persists, you might be under attack.",
-                  pagetitle: 'Configuration'
-                });
+          exec('tpm_resetdalock -z && ' + cmd, function(error, stdout, stderr) {
+            if (error) {
+              res.render('err', {
+                message: 'An error occured while configuring the device. Please restart configuration.',
+                pagetitle: 'Configuration'
               });
             } else {
               // data is already parsed as JSON
@@ -281,7 +278,7 @@ module.exports = function(app, validator, xss, fs) {
         resolve(stdout);
       }
       // First reset the DA lock (just in case), then decrypt the password
-      exec('tpm_resetdalock -z', exec('deh -dn password', callback) );
+      exec('tpm_resetdalock -z && deh -dn password', callback);
     }); // Promise passwordRead
 
 
@@ -345,14 +342,14 @@ module.exports = function(app, validator, xss, fs) {
         // Properly escape double quotes in JSON string by using single quotes in bash
         var cmd = "deh -en settings '" + JSON.stringify(values.data) + "'";
         // Reset TPM DA lock and encrypt the settings
-        exec('tpm_resetdalock -z', exec(cmd, (error, stdout, stderr) => {
+        exec('tpm_resetdalock -z && ' + cmd, (error, stdout, stderr) => {
           if(error) {
             console.error(error);
             req.flash('errormessage', 'An error happened during the encryption of the data. Please reconfigure the device.');
             return reject('Error');
           }
           resolve()
-        }));
+        });
       });
     })
     // Process the received data

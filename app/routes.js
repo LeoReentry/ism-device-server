@@ -170,7 +170,7 @@ module.exports = function(app, validator, xss, fs) {
 
           // Encrypt password
           var exec = require('child_process').exec;
-          var cmd = 'deh -en password "' + data.Password + '"';
+          var cmd = "deh -en password '" + data.Password + "'";
           exec(cmd, function(error, stdout, stderr) {
             if (/Tpm is defending against dictionary attacks/.test(stdout)) {
               cmd = 'tpm_resetdalock -z';

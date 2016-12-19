@@ -135,73 +135,85 @@ module.exports = function(app, validator, xss, fs) {
     var request = require('request');
     // Add API to URL
     var apiUrl = url + '/api/newdevice/' + nm + '?sw=' + sw + '&hw=' + hw + '&loc=' + loc;
-    // Make request to API to get Locations
-    request.get({
-        url: apiUrl,
-        json: true
-      }, (err, resp, data) => {
+    // Promise for request
+    var getRequest = new Promise((resolve, reject) => {
+      request.get({ url: apiUrl, json: true }, (err, resp, data) => {
         // An error occured
         if (err) {
-          console.log('Error:', err);
-          return res.render('err', {
-            message: 'An error occured trying to contact the server.',
-            pagetitle: 'Configuration'
-          });
+          console.log('Error: ', err);
+          req.flash('errormessage', 'An error occured trying to contact the server.');
+          reject('Error');
         // Something bad has happened
-        } else if (res.statusCode !== 200) {
-          console.log('Status:', res.statusCode);
-          return res.render('err', {
-            message: "Error. The server API doesn't work as expected",
-            pagetitle: 'Configuration'
-          });
-        // Everything OK
+        } else if (resp.statusCode !== 200) {
+          console.log('Status: ' + resp.statusCode);
+          req.flash('errormessage', "Error. The server API doesn't work as expected.");
+          reject('Error');
         } else {
-          // Oh no, an error in the request
-          if (data.Error) {
-            if (data.Error === "This device ID is already taken.") {
-              req.flash('nameError', data.Error);
-              return res.redirect(307, '/configuration');
-            }
-            return res.render("err", {
-              message: "An unexpected error has occured.",
-              pagetitle: 'Configuration'
-            });
-          }
-
-          // Encrypt password
-          var exec = require('child_process').exec;
-          var cmd = 'deh -en password "' + data.Password + '"';
-          exec(cmd, function(error, stdout, stderr) {
-            if (/Tpm is defending against dictionary attacks/.test(stdout)) {
-              cmd = 'tpm_resetdalock -z';
-              exec(cmd, function(error, stdout, stderr) {
-                res.render('err', {
-                  message: "Error. The device encryption module is in lockdown mode because it is protecting itself against dictionary attacks. We will reset it. Please restart configuration. If this error persists, you might be under attack.",
-                  pagetitle: 'Configuration'
-                });
-              });
-            } else {
-              // data is already parsed as JSON
-              var config = {
-                name: nm,
-                url: url,
-                sw: sw,
-                hw: hw,
-                loc: loc,
-                code: data.Code,
-                status: "Approval pending"
-              }
-              fs.writeFile("config.json", JSON.stringify( config ), "utf8" );
-              res.render('status', {
-                pagetitle: 'Configuration',
-                code: data.Code,
-                name: data.Id,
-                status: config.status,
-                type: 'conf'
-              });
-            }
-          }); // Exec deh
+          // Everything's fine, return our data
+          resolve(data);
         }
+      });
+    });
+
+    getRequest.then((data) => {
+      // An API error occured
+      if (data.Error) {
+        if (data.Error === "This device ID is already taken.") {
+          req.flash('nameError', data.Error);
+          throw new Error('Configuration');
+        }
+        req.flash('errormessage', "An unexpected error has occured.");
+        throw new Error('Error');
+      }
+      // Encrypt password
+      var exec = require('child_process').exec;
+      var cmd = "tpm_resetdalock -z && deh -en password '" + data.Password + "'";
+      exec(cmd, function(error, stdout, stderr) {
+        if (error) {
+          console.error('An error occured while trying to encrypt the password: ' + error);
+          req.flash('errormessage', "An error occured while trying to encrypt the password. Please restart configuration.");
+          throw new Error('Error');
+        }
+        // data is already parsed as JSON
+        var config = {
+          name: nm,
+          url: url,
+          sw: sw,
+          hw: hw,
+          loc: loc,
+          code: data.Code,
+          status: "Approval pending"
+        }
+        fs.writeFile("config.json", JSON.stringify( config ), "utf8" );
+        res.render('status', {
+          pagetitle: 'Configuration',
+          code: data.Code,
+          name: data.Id,
+          status: config.status,
+          type: 'conf'
+        });
+      });
+    })
+    .catch((error) => {
+      if (error == 'Error') {
+        return res.render('err', {
+          pagetitle: 'Status',
+          message: req.flash('errormessage')
+        });
+      }
+      else if (error == 'Error: Status' || error == 'Status') {
+        return res.redirect('/status');
+      }
+      else if (error == 'Error: Configuration' || error == 'Configuration') {
+        return res.redirect(307, '/configuration');
+      }
+      else {
+        console.error(error);
+        res.render('err', {
+          pagetitle: 'Error',
+          message: error
+        });
+      }
     });
   });
 

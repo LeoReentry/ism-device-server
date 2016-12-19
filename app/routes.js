@@ -68,36 +68,32 @@ module.exports = function(app, validator, xss, fs) {
     // Add API to URL
     var apiUrl = url + '/api/newdevice';
     // Make request to API to get Locations
-    request.get({
-        url: apiUrl,
-        json: true
-      }, (err, resp, data) => {
-        // An error occured
-        if (err) {
-          console.log('Error:', err);
-          return res.render('err', {
-            message: 'An error occured trying to contact the server.',
-            pagetitle: 'Configuration'
-          });
-        // Something bad has happened
-        } else if (res.statusCode !== 200) {
-          console.log('Status:', res.statusCode);
-          return res.render('err', {
-            message: "Error. The server API doesn't work as expected",
-            pagetitle: 'Configuration'
-          });
-        // Everything OK
-        } else {
-          // data is already parsed as JSON
-          return res.render('configuration_complete', {
-            pagetitle: 'Configuration',
-            portalurl: url,
-            data: data,
-            error: req.flash('nameError'),
-            urlMessage: req.flash('urlError'),
-            inName:req.body.name
-          });
-        }
+    request.get({ url: apiUrl, json: true }, (err, resp, data) => {
+      // An error occured
+      if (err) {
+        console.log('Error:', err);
+        return res.render('err', {
+          message: 'An error occured trying to contact the server.',
+          pagetitle: 'Configuration'
+        });
+      // Something bad has happened
+      } else if (res.statusCode !== 200) {
+        console.log('Status:', res.statusCode);
+        return res.render('err', {
+          message: "Error. The server API doesn't work as expected",
+          pagetitle: 'Configuration'
+        });
+      // Everything OK
+      }
+      // data is already parsed as JSON
+      return res.render('configuration_complete', {
+        pagetitle: 'Configuration',
+        portalurl: url,
+        data: data,
+        error: req.flash('nameError'),
+        urlMessage: req.flash('urlError'),
+        inName:req.body.name
+      });
     });
   })
 
@@ -192,7 +188,7 @@ module.exports = function(app, validator, xss, fs) {
           status: config.status,
           type: 'conf'
         });
-      });
+      }); // exec
     })
     .catch((error) => {
       if (error == 'Error') {

@@ -8,9 +8,11 @@ block content
         label.form-control-label(for='urlinput') IoT Portal URL
         input#urlinput(type='url' name='portalurl' placeholder='Remember to use https' value=url).form-control
         span.form-control-feedback Please specify a correct URL
+        input(type='hidden' name='_csrf' value=Token)
       button(type='submit').btn.btn-primary Submit
     else
       .form-group
         label(for='urlinput') IoT Portal URL
         input#urlinput(type='url' name='portalurl' placeholder='Remember to use https' value=url).form-control
+        input(type='hidden' name='_csrf' value=Token) 
       button(type='submit').btn.btn-primary Submit

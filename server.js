@@ -19,6 +19,7 @@ var flash = require('connect-flash');
 var validator = require('validator');
 var xss = require('xss');
 var helmet = require('helmet');
+var csrf = require('csurf')
 
 // =================================================
 // =================================================
@@ -55,6 +56,10 @@ var options = {
    cert : fs.readFileSync(__dirname + '/public.cert')
 };
 // -------------------------------------------------
+// CSRF Tokens
+// -------------------------------------------------
+var csrfProtection = csrf()
+// -------------------------------------------------
 // Views
 // -------------------------------------------------
 app.set('view engine', 'pug');
@@ -63,7 +68,7 @@ app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redi
 app.use('/js', express.static(__dirname + '/public')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
 app.set('views', __dirname+'/views');
-require('./app/routes.js')(app, validator, xss, fs);
+require('./app/routes.js')(app, validator, xss, fs, csrfProtection);
 
 // =================================================
 // =================================================

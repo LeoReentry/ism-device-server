@@ -36,4 +36,5 @@ block content
       select#hardware.form-control(name='hardware')
         each hw in data.Hardware
           option(value=hw.HardwareId) Board: #{hw.Board}, Camera: #{hw.Camera}
+    input(type='hidden' name='_csrf' value=Token)
     button(type='submit').btn.btn-primary Submit

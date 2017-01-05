@@ -1,7 +1,7 @@
 $( document ).ready(function(){
   $("#shutdown").click(function(){
-    $.get("shutdown/yes",function(data) {
-    })
+    var token = $("#csrf").val();
+    $.post("shutdown/yes", { _csrf: token })
     .fail(function() {
       $("#question").html("Server is shut down");
     });

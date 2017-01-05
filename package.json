@@ -12,6 +12,7 @@
     "body-parser": "^1.15.2",
     "bootstrap": "^4.0.0-alpha.5",
     "connect-flash": "^0.1.1",
+    "csurf": "^1.9.0",
     "dotenv": "^2.0.0",
     "express": "^4.14.0",
     "express-session": "^1.14.2",

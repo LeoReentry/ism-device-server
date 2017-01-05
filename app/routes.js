@@ -1,15 +1,15 @@
 'use strict';
 // app/routes.js
 
-module.exports = function(app, validator, xss, fs) {
-  app.get('/shutdown', (req, res) => {
+module.exports = function(app, validator, xss, fs, csrfProtection) {
+  app.get('/shutdown', csrfProtection, (req, res) => {
     res.render('shutdown', {
       pagetitle: "Shutdown",
-      message: "Server is shut down."
+      message: "Server is shut down.",
+      Token: req.csrfToken()
     });
-    // process.exit();
   });
-  app.get('/shutdown/yes', (req, res) => {
+  app.post('/shutdown/yes', csrfProtection, (req, res) => {
     process.exit();
   });
   // =================================================
@@ -43,15 +43,16 @@ module.exports = function(app, validator, xss, fs) {
   // -------------------------------------------------
   // BASIC config page
   // -------------------------------------------------
-  app.get('/configuration', function(req, res) {
+  app.get('/configuration', csrfProtection, function(req, res) {
     res.render('configuration', {
       pagetitle: 'Configuration',
-      url: 'https://ismportal.azurewebsites.net'
+      url: 'https://ismportal.azurewebsites.net',
+      Token: req.csrfToken()
     });
   });
   // POST
   // URL is defined
-  app.post('/configuration', function(req, res) {
+  app.post('/configuration', csrfProtection, function(req, res) {
     // XSS protection
     var url = xss(req.body.portalurl);
     // If URL isn't valid, ask user to use correct URL
@@ -59,7 +60,8 @@ module.exports = function(app, validator, xss, fs) {
       return res.render('configuration', {
         pagetitle: 'Configuration',
         error: 'Please specify a correct URL',
-        url: url
+        url: url,
+        Token: req.csrfToken()
       });
     }
 
@@ -92,12 +94,13 @@ module.exports = function(app, validator, xss, fs) {
         data: data,
         error: req.flash('nameError'),
         urlMessage: req.flash('urlError'),
-        inName:req.body.name
+        inName:req.body.name,
+        Token: req.csrfToken()
       });
     });
   })
 
-  app.post('/configuration/done', function(req, res){
+  app.post('/configuration/done', csrfProtection, function(req, res){
     // XSS protection
     var url = xss(req.body.portalurl);
     var sw = xss(req.body.software);

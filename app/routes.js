@@ -189,7 +189,8 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
           code: data.Code,
           name: data.Id,
           status: config.status,
-          type: 'conf'
+          type: 'conf',
+          Token: req.csrfToken()
         });
       }); // exec
     })
@@ -221,7 +222,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
   // STATUS PAGE
   // =================================================
   // =================================================
-  app.get('/status', function(req, res) {
+  app.get('/status', csrfProtection, function(req, res) {
     fs.readFile('config.json', (err, data) => {
       if (err) {
         return res.render('err', {
@@ -245,6 +246,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
         message: req.flash('statusmessage'),
         error: req.flash('statuserror'),
         success: req.flash('statussuccess'),
+        Token: req.csrfToken()
       });
     });
   });
@@ -257,7 +259,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
   // =================================================
   var nop = function(){};
 
-  app.post('/status', (req, res) => {
+  app.post('/status', csrfProtection, (req, res) => {
     // Promise for reading configuration file
     var fileRead = new Promise((resolve, reject) => {
       // Read file

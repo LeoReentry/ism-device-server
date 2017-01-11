@@ -32,8 +32,8 @@ var csrf = require('csurf')
 // -------------------------------------------------
 var http = require('http');
 var server = http.createServer(function (request, response) {
-  response.writeHead(200, {"Content-Type": "text/plain"});
-  response.end("Please use https!\n");
+  response.writeHead(200, {"Content-Type": "text/html"});
+  response.end("<!DOCTYPE html><html><body><h1>Please use HTTPS.</h1></body></html>");
 });
 server.listen(process.env.HTTPPORT || 80);
 // -------------------------------------------------

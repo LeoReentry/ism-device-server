@@ -166,7 +166,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
       }
       // Encrypt password
       var exec = require('child_process').exec;
-      var cmd = "tpm_resetdalock -z && deh -en password '" + data.Password + "'";
+      var cmd = "/usr/sbin/tpm_resetdalock -z && /usr/local/bin/deh -en password '" + data.Password + "'";
       exec(cmd, function(error, stdout, stderr) {
         if (error) {
           console.error('An error occured while trying to encrypt the password: ' + error);
@@ -294,7 +294,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
         resolve(stdout);
       }
       // First reset the DA lock (just in case), then decrypt the password
-      exec('tpm_resetdalock -z && deh -dn password', callback);
+      exec('/usr/sbin/tpm_resetdalock -z && /usr/local/bin/deh -dn password', callback);
     }); // Promise passwordRead
 
 
@@ -356,9 +356,9 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
       var exec = require('child_process').exec;
       return new Promise((resolve, reject) => {
         // Properly escape double quotes in JSON string by using single quotes in bash
-        var cmd = "deh -en settings '" + JSON.stringify(values.data) + "'";
+        var cmd = "/usr/local/bin/deh -en settings '" + JSON.stringify(values.data) + "'";
         // Reset TPM DA lock and encrypt the settings
-        exec('tpm_resetdalock -z && ' + cmd, (error, stdout, stderr) => {
+        exec('/usr/sbin/tpm_resetdalock -z && ' + cmd, (error, stdout, stderr) => {
           if(error) {
             console.error(error);
             req.flash('errormessage', 'An error happened during the encryption of the data. Please reconfigure the device.');

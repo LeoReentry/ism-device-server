@@ -349,6 +349,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
       // Everything's good.
       // Write configuration back to device
       values.configData.status = "Approved";
+      values.configData.publicKeyUrl = values.data.PublicKeyUrl;
       fs.writeFile('config.json', JSON.stringify(values.configData), 'utf8');
 
       // Encrypt data

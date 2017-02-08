@@ -2,6 +2,7 @@
 // app/routes.js
 
 module.exports = function(app, validator, xss, fs, csrfProtection) {
+  var configFilePath = "/home/debian/.ismdata/config.json"
   app.get('/shutdown', csrfProtection, (req, res) => {
     res.render('shutdown', {
       pagetitle: "Shutdown",
@@ -166,7 +167,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
       }
       // Encrypt password
       var exec = require('child_process').exec;
-      var cmd = "/usr/sbin/tpm_resetdalock -z && /usr/local/bin/deh -en password '" + data.Password + "'";
+      var cmd = "/usr/sbin/tpm_resetdalock -z && /home/debian/bin/deh -en password '" + data.Password + "'";
       exec(cmd, function(error, stdout, stderr) {
         if (error) {
           console.error('An error occured while trying to encrypt the password: ' + error);
@@ -183,7 +184,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
           code: data.Code,
           status: "Approval pending"
         }
-        fs.writeFile("config.json", JSON.stringify( config ), "utf8" );
+        fs.writeFile(configFilePath, JSON.stringify( config ), "utf8" );
         res.render('status', {
           pagetitle: 'Configuration',
           code: data.Code,
@@ -223,7 +224,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
   // =================================================
   // =================================================
   app.get('/status', csrfProtection, function(req, res) {
-    fs.readFile('config.json', (err, data) => {
+    fs.readFile(configFilePath, (err, data) => {
       if (err) {
         return res.render('err', {
           message: 'Please configure the device.',
@@ -263,7 +264,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
     // Promise for reading configuration file
     var fileRead = new Promise((resolve, reject) => {
       // Read file
-      fs.readFile('config.json', (err, config) => {
+      fs.readFile(configFilePath, (err, config) => {
         // Handle error
         if (err) {
           req.flash('errormessage', 'Device not configured.')
@@ -294,7 +295,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
         resolve(stdout);
       }
       // First reset the DA lock (just in case), then decrypt the password
-      exec('/usr/sbin/tpm_resetdalock -z && /usr/local/bin/deh -dn password', callback);
+      exec('/usr/sbin/tpm_resetdalock -z && /home/debian/bin/deh -dn password', callback);
     }); // Promise passwordRead
 
 
@@ -335,7 +336,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
       // Device has been removed or denied
       if (values.data.Error && values.data.Error == "Device does not exist.") {
         values.configData.status = "Denied";
-        fs.writeFile('config.json', JSON.stringify(values.configData), 'utf8');
+        fs.writeFile(configFilePath, JSON.stringify(values.configData), 'utf8');
         req.flash('statuserror', "Device was rejected from portal.");
         // Abort promise chain
         throw new Error('Status');
@@ -350,14 +351,14 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
       // Write configuration back to device
       values.configData.status = "Approved";
       values.configData.publicKeyUrl = values.data.PublicKeyUrl;
-      fs.writeFile('config.json', JSON.stringify(values.configData), 'utf8');
+      fs.writeFile(configFilePath, JSON.stringify(values.configData), 'utf8');
 
       // Encrypt data
       // Execute child processes
       var exec = require('child_process').exec;
       return new Promise((resolve, reject) => {
         // Properly escape double quotes in JSON string by using single quotes in bash
-        var cmd = "/usr/local/bin/deh -en settings '" + JSON.stringify(values.data) + "'";
+        var cmd = "/home/debian/bin/deh -en settings '" + JSON.stringify(values.data) + "'";
         // Reset TPM DA lock and encrypt the settings
         exec('/usr/sbin/tpm_resetdalock -z && ' + cmd, (error, stdout, stderr) => {
           if(error) {

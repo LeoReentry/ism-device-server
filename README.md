@@ -34,7 +34,8 @@ Then run
 ```shell
 cd ism-device-server
 # Generate session secret using openssl
-echo SESSION_SECRET=`openssl rand -base64 21` > .env
+mkdir -p /home/debian/.ismdata/server
+echo SESSION_SECRET=`openssl rand -base64 21` > /home/debian/.ismdata/server/.env
 # Generate certificates
 ./gencert.sh
 # Download dependencies

@@ -7,7 +7,7 @@
 // SETUP
 // =================================================
 // =================================================
-require('dotenv').config();
+require('dotenv').config({path: "/home/debian/.ismdata/server/.env" });
 var fs = require('fs');
 var https = require('https');
 var express = require('express');
@@ -53,8 +53,8 @@ app.use(session({
 app.use(flash()); // Flash messages
 // HTTPS certificates
 var options = {
-   key  : fs.readFileSync(__dirname + '/private.key'),
-   cert : fs.readFileSync(__dirname + '/public.cert')
+   key  : fs.readFileSync('/home/debian/.ismdata/server/private.key'),
+   cert : fs.readFileSync('/home/debian/.ismdata/server/public.cert')
 };
 // -------------------------------------------------
 // CSRF Tokens

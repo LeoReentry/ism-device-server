@@ -30,7 +30,7 @@ block content
       label(for='software') Software
       select#software.form-control(name='software')
         each sw in data.Software
-          option(value=sw.SoftwareId) Version #{sw.Name}
+          option(value=sw.SoftwareId+":"+sw.Name) Version #{sw.Name}
     .form-group
       label(for='hardware') Hardware
       select#hardware.form-control(name='hardware')

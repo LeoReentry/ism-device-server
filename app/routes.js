@@ -103,8 +103,10 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
 
   app.post('/configuration/done', csrfProtection, function(req, res){
     // XSS protection
+    var software = xss(req.body.software);
+    var sw = software.split(':')[0]
+    var version = software.split(':')[1]
     var url = xss(req.body.portalurl);
-    var sw = xss(req.body.software);
     var hw = xss(req.body.hardware);
     var loc = xss(req.body.location);
     var nm = xss(req.body.name);
@@ -182,7 +184,8 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
           hw: hw,
           loc: loc,
           code: data.Code,
-          status: "Approval pending"
+          status: "Approval pending",
+          softwareversion: version
         }
         fs.writeFile(configFilePath, JSON.stringify( config ), "utf8" );
         res.render('status', {

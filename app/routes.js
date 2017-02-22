@@ -13,7 +13,7 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
   app.post('/shutdown/yes', csrfProtection, (req, res) => {
     process.exit();
   });
-  
+
   // =================================================
   // =================================================
   // HOME PAGE
@@ -71,10 +71,23 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
   // BASIC config page
   // -------------------------------------------------
   app.get('/configuration', csrfProtection, function(req, res) {
-    res.render('configuration', {
-      pagetitle: 'Configuration',
-      url: 'https://ismportal.azurewebsites.net',
-      Token: req.csrfToken()
+    fs.readFile(configFilePath, (err, data) => {
+      var config = JSON.parse(data);
+      if (err) {
+        return res.render('err', {
+          message: 'Please configure the device.',
+          pagetitle: "About"
+        });
+      }
+      if (config.status == 'Approved')
+        req.flash("config-warning", "This is device is already successfully configured. Do you really want to reconfigure it?")
+
+      res.render('configuration', {
+        pagetitle: 'Configuration',
+        url: 'https://ismportal.azurewebsites.net',
+        Token: req.csrfToken(),
+        warning: req.flash("config-warning")
+      });
     });
   });
   // POST

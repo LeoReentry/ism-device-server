@@ -9,10 +9,14 @@ block content
         input#urlinput(type='url' name='portalurl' placeholder='Remember to use https' value=url).form-control
         span.form-control-feedback Please specify a correct URL
         input(type='hidden' name='_csrf' value=Token)
-      button(type='submit').btn.btn-primary Submit
     else
       .form-group
         label(for='urlinput') IoT Portal URL
         input#urlinput(type='url' name='portalurl' placeholder='Remember to use https' value=url).form-control
-        input(type='hidden' name='_csrf' value=Token) 
+        input(type='hidden' name='_csrf' value=Token)
+
+    if warning && warning.length
+      p.text-danger.lead #{warning}
+      button(type='submit').btn.btn-danger Submit
+    else
       button(type='submit').btn.btn-primary Submit

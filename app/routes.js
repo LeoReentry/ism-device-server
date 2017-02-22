@@ -13,19 +13,35 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
   app.post('/shutdown/yes', csrfProtection, (req, res) => {
     process.exit();
   });
+  
   // =================================================
   // =================================================
   // HOME PAGE
   // =================================================
   // =================================================
   app.get('/', function(req, res) {
-    res.render('home', {
-      pagetitle: 'Home'
+    fs.readFile(configFilePath, (err, data) => {
+      var config = JSON.parse(data);
+      if (err) {
+        return res.render('err', {
+          message: 'Please configure the device.',
+          pagetitle: "About"
+        });
+      }
+      if (config.status == 'Approved')
+        req.flash("index-warning", "This is device is already successfully configured. Restarting the configuration can break things.")
+
+      res.render('home', {
+        pagetitle: 'Home',
+        warning: req.flash("index-warning")
+      });
     });
   });
+
   app.get('/home', function(req, res) {
     res.redirect('/');
   });
+
   // =================================================
   // =================================================
   // ABOUT PAGE

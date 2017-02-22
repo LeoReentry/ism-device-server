@@ -2,4 +2,8 @@ extends ./layout.pug
 block content
   h1.text-xs-center ISM Device
   p.lead Welcome to the ISM IoT Device Web UI. Please configure this device.
-  a.btn.btn-primary(href='/configuration') Start configuration
+  if warning && warning.length
+    p.text-danger.lead #{warning}
+    a.btn.btn-danger(href='/configuration') Reconfigure
+  else
+    a.btn.btn-primary(href='/configuration') Start configuration

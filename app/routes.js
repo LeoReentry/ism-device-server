@@ -32,8 +32,18 @@ module.exports = function(app, validator, xss, fs, csrfProtection) {
   // =================================================
   // =================================================
   app.get('/about', function(req, res) {
-    res.render('about', {
-      pagetitle: 'About'
+    fs.readFile(configFilePath, (err, data) => {
+      var config = JSON.parse(data);
+      if (err) {
+        return res.render('err', {
+          message: 'Please configure the device.',
+          pagetitle: "About"
+        });
+      }
+      res.render('about', {
+        pagetitle: 'About',
+        data: config
+      });
     });
   });
   // =================================================

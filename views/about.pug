@@ -1,3 +1,45 @@
 extends ./layout.pug
 block content
-  p Temp
+  h1.text-xs-center #{pagetitle}
+
+  .row
+    .col-sm-4
+      p.lead
+        strong Name
+    .col-sm-8
+      p #{data.name}
+  .row
+    .col-sm-4
+      p.lead
+        strong Firmware Version
+    .col-sm-8
+      p #{data.softwareversion}
+  .row
+    .col-sm-4
+      p.lead
+        strong Portal URL
+    .col-sm-8
+      p #{data.url}
+  .row
+    .col-sm-4
+      p.lead
+        strong Current status
+    .col-sm-8
+      if (data.status === "Approved")
+        p.text-success #{data.status}
+      else if (data.status === "Denied")
+        p.text-danger #{data.status}
+      else
+        p.text-warning #{data.status}
+  .row
+    .col-sm-4
+      p.lead
+        strong Hardware ID
+    .col-sm-8
+      p #{data.hw}
+  .row
+    .col-sm-4
+      p.lead
+        strong Location ID
+    .col-sm-8
+      p #{data.loc}
